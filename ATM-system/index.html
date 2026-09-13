@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATM银行系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+        }
+        .page { display: none; }
+        .page.active { display: block; }
+        .logo { font-size: 60px; text-align: center; margin-bottom: 15px; }
+        h2 { text-align: center; color: #333; font-weight: bold; margin-bottom: 25px; }
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px;
+            font-weight: bold;
+            border-radius: 8px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-gradient:hover { background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%); }
+        .btn-outline-custom {
+            border: 2px solid #667eea;
+            color: #667eea;
+            background: transparent;
+            border-radius: 8px;
+            padding: 10px;
+            font-weight: bold;
+        }
+        .btn-outline-custom:hover { background: #667eea; color: white; }
+        .link-btn { color: #667eea; cursor: pointer; text-decoration: underline; background: none; border: none; }
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        .menu-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 20px 10px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .menu-btn:hover { transform: scale(1.05); }
+        .menu-btn .icon { font-size: 30px; display: block; margin-bottom: 8px; }
+        .info-box { background: #f8f9fa; border-radius: 10px; padding: 20px; margin: 15px 0; }
+        .info-box .label { color: #999; font-size: 13px; }
+        .info-box .value { color: #333; font-size: 24px; font-weight: bold; }
+        .alert-msg { border-radius: 8px; margin-bottom: 15px; }
+        .back-btn { background: none; border: none; color: #667eea; cursor: pointer; margin-bottom: 15px; font-size: 14px; }
+        .logout-btn { background: #dc3545; border: none; color: white; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; margin-top: 15px; }
+        .history-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<!-- 登录页 -->
+<div class="card page active" id="page-login">
+    <div class="logo">&#127974;</div>
+    <h2>ATM系统登录</h2>
+    <div id="login-alert"></div>
+    <div class="mb-3">
+        <label class="form-label">卡号</label>
+        <input type="text" class="form-control" id="login-card" placeholder="请输入8位卡号" maxlength="8">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">密码</label>
+        <input type="password" class="form-control" id="login-pwd" placeholder="请输入密码">
+    </div>
+    <button class="btn btn-gradient" onclick="doLogin()">登录</button>
+    <div style="text-align:center;margin-top:20px;">
+        还没有账户？<button class="link-btn" onclick="showPage('page-register')">立即开户</button>
+    </div>
+</div>
+
+<!-- 注册页 -->
+<div class="card page" id="page-register">
+    <button class="back-btn" onclick="showPage('page-login')">&#8592; 返回登录</button>
+    <h2>开户注册</h2>
+    <div id="register-alert"></div>
+    <div class="mb-3">
+        <label class="form-label">姓名</label>
+        <input type="text" class="form-control" id="reg-name" placeholder="请输入真实姓名">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">身份证号</label>
+        <input type="text" class="form-control" id="reg-idcard" placeholder="请输入18位身份证号" maxlength="18">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">手机号</label>
+        <input type="text" class="form-control" id="reg-phone" placeholder="请输入手机号" maxlength="11">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">设置密码</label>
+        <input type="password" class="form-control" id="reg-pwd" placeholder="请设置密码">
+    </div>
+    <button class="btn btn-gradient" onclick="doRegister()">注册开户</button>
+</div>
+
+<!-- 主菜单页 -->
+<div class="card page" id="page-main">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 style="margin:0;">ATM主菜单</h2>
+        <button class="link-btn" style="text-decoration:none;font-size:13px;" onclick="doLogout()">退出登录</button>
+    </div>
+    <div style="text-align:center;color:#999;margin:5px 0 10px;">欢迎，<span id="user-name"></span></div>
+    <div class="info-box">
+        <div class="label">当前余额</div>
+        <div class="value" id="user-balance">¥0.00</div>
+    </div>
+    <div class="menu-grid">
+        <button class="menu-btn" onclick="showPage('page-deposit')"><span class="icon">&#128176;</span>存款</button>
+        <button class="menu-btn" onclick="showPage('page-withdraw')"><span class="icon">&#128179;</span>取款</button>
+        <button class="menu-btn" onclick="showPage('page-transfer')"><span class="icon">&#128259;</span>转账</button>
+        <button class="menu-btn" onclick="showPage('page-history')"><span class="icon">&#128202;</span>交易记录</button>
+        <button class="menu-btn" onclick="showPage('page-changepwd')"><span class="icon">&#128274;</span>修改密码</button>
+        <button class="menu-btn" onclick="showPage('page-info')"><span class="icon">&#128100;</span>账户信息</button>
+    </div>
+</div>
+
+<!-- 存款页 -->
+<div class="card page" id="page-deposit">
+    <button class="back-btn" onclick="showPage('page-main')">&#8592; 返回</button>
+    <h2>存款</h2>
+    <div id="deposit-alert"></div>
+    <div class="mb-3">
+        <label class="form-label">存款金额</label>
+        <input type="number" class="form-control" id="deposit-amount" placeholder="请输入金额" min="1" step="0.01">
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <button class="btn btn-outline-custom" style="flex:1;" onclick="setAmount('deposit-amount',100)">100</button>
+        <button class="btn btn-outline-custom" style="flex:1;" onclick="setAmount('deposit-amount',500)">500</button>
+        <button class="btn btn-outline-custom" style="flex:1;" onclick="setAmount('deposit-amount',1000)">1000</button>
+        <button class="btn btn-outline-custom" style="flex:1;" onclick="setAmount('deposit-amount',5000)">5000</button>
+    </div>
+    <button class="btn btn-gradient" onclick="doDeposit()">确认存款</button>
+</div>
+
+<!-- 取款页 -->
+<div class="card page" id="page-withdraw">
+    <button class="back-btn" onclick="showPage('page-main')">&#8592; 返回</button>
+    <h2>取款</h2>
+    <div id="withdraw-alert"></div>
+    <div class="mb-3">
+        <label class="form-label">取款金额</label>
+        <input type="number" class="form-control" id="withdraw-amount" placeholder="请输入金额" min="1" step="0.01">
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <button class="btn btn-outline-custom" style="flex:1;" onclick="setAmount('withdraw-amount',100)">100</button>
+        <button class="btn btn-outline-custom" style="flex:1;" onclick="setAmount('withdraw-amount',500)">500</button>
+        <button class="btn btn-outline-custom" style="flex:1;" onclick="setAmount('withdraw-amount',1000)">1000</button>
+        <button class="btn btn-outline-custom" style="flex:1;" onclick="setAmount('withdraw-amount',2000)">2000</button>
+    </div>
+    <button class="btn btn-gradient" onclick="doWithdraw()">确认取款</button>
+</div>
+
+<!-- 转账页 -->
+<div class="card page" id="page-transfer">
+    <button class="back-btn" onclick="showPage('page-main')">&#8592; 返回</button>
+    <h2>转账</h2>
+    <div id="transfer-alert"></div>
+    <div class="mb-3">
+        <label class="form-label">对方卡号</label>
+        <input type="text" class="form-control" id="transfer-to" placeholder="请输入对方8位卡号" maxlength="8">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">转账金额</label>
+        <input type="number" class="form-control" id="transfer-amount" placeholder="请输入金额" min="1" step="0.01">
+    </div>
+    <button class="btn btn-gradient" onclick="doTransfer()">确认转账</button>
+</div>
+
+<!-- 交易记录页 -->
+<div class="card page" id="page-history">
+    <button class="back-btn" onclick="showPage('page-main')">&#8592; 返回</button>
+    <h2>交易记录</h2>
+    <div id="history-list"></div>
+</div>
+
+<!-- 修改密码页 -->
+<div class="card page" id="page-changepwd">
+    <button class="back-btn" onclick="showPage('page-main')">&#8592; 返回</button>
+    <h2>修改密码</h2>
+    <div id="changepwd-alert"></div>
+    <div class="mb-3">
+        <label class="form-label">当前密码</label>
+        <input type="password" class="form-control" id="old-pwd" placeholder="请输入当前密码">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">新密码</label>
+        <input type="password" class="form-control" id="new-pwd" placeholder="请输入新密码">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">确认新密码</label>
+        <input type="password" class="form-control" id="confirm-pwd" placeholder="请再次输入新密码">
+    </div>
+    <button class="btn btn-gradient" onclick="doChangePwd()">确认修改</button>
+</div>
+
+<!-- 账户信息页 -->
+<div class="card page" id="page-info">
+    <button class="back-btn" onclick="showPage('page-main')">&#8592; 注销账户</button>
+    <h2>账户信息</h2>
+    <div class="info-box">
+        <div class="label">卡号</div>
+        <div class="value" id="info-card" style="font-size:18px;"></div>
+    </div>
+    <div class="info-box">
+        <div class="label">姓名</div>
+        <div class="value" id="info-name" style="font-size:18px;"></div>
+    </div>
+    <div class="info-box">
+        <div class="label">身份证号</div>
+        <div class="value" id="info-idcard" style="font-size:16px;"></div>
+    </div>
+    <div class="info-box">
+        <div class="label">手机号</div>
+        <div class="value" id="info-phone" style="font-size:18px;"></div>
+    </div>
+    <div class="info-box">
+        <div class="label">余额</div>
+        <div class="value" id="info-balance" style="font-size:22px;color:#667eea;"></div>
+    </div>
+    <button class="logout-btn" onclick="doCloseAccount()">注销账户</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let currentUser = null;
+
+    function getUsers() {
+        return JSON.parse(localStorage.getItem('atm_users') || '{}');
+    }
+    function saveUsers(users) {
+        localStorage.setItem('atm_users', JSON.stringify(users));
+    }
+    function setUsers(users) {
+        localStorage.setItem('atm_users', JSON.stringify(users));
+    }
+    function showPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if (id === 'page-main') refreshMain();
+        if (id === 'page-info') refreshInfo();
+        if (id === 'page-history') refreshHistory();
+    }
+    function showAlert(divId, msg, type) {
+        document.getElementById(divId).innerHTML = '<div class="alert alert-' + type + ' alert-msg">' + msg + '</div>';
+        setTimeout(() => { document.getElementById(divId).innerHTML = ''; }, 3000);
+    }
+    function setAmount(inputId, val) {
+        document.getElementById(inputId).value = val;
+    }
+
+    function doRegister() {
+        let name = document.getElementById('reg-name').value.trim();
+        let idcard = document.getElementById('reg-idcard').value.trim();
+        let phone = document.getElementById('reg-phone').value.trim();
+        let pwd = document.getElementById('reg-pwd').value.trim();
+
+        if (!name || !idcard || !phone || !pwd) {
+            showAlert('register-alert', '请填写完整信息', 'danger'); return;
+        }
+        if (idcard.length !== 18) { showAlert('register-alert', '身份证号须18位', 'danger'); return; }
+        if (phone.length !== 11) { showAlert('register-alert', '手机号须11位', 'danger'); return; }
+        if (pwd.length < 6) { showAlert('register-alert', '密码至少6位', 'danger'); return; }
+
+        let users = getUsers();
+        for (let card in users) {
+            if (users[card].idcard === idcard) { showAlert('register-alert', '该身份证已注册', 'danger'); return; }
+        }
+
+        let cardId;
+        do { cardId = String(Math.floor(10000000 + Math.random() * 90000000)); } while (users[cardId]);
+
+        users[cardId] = { name, idcard, phone, pwd, balance: 0, history: [] };
+        saveUsers(users);
+        showAlert('register-alert', '注册成功！您的卡号：' + cardId, 'success');
+        setTimeout(() => { showPage('page-login'); document.getElementById('login-card').value = cardId; }, 1500);
+    }
+
+    function doLogin() {
+        let card = document.getElementById('login-card').value.trim();
+        let pwd = document.getElementById('login-pwd').value.trim();
+        if (!card || !pwd) { showAlert('login-alert', '请输入卡号和密码', 'danger'); return; }
+        let users = getUsers();
+        if (!users[card]) { showAlert('login-alert', '卡号不存在', 'danger'); return; }
+        if (users[card].pwd !== pwd) { showAlert('login-alert', '密码错误', 'danger'); return; }
+        currentUser = card;
+        showPage('page-main');
+    }
+
+    function doLogout() { currentUser = null; showPage('page-login'); }
+
+    function refreshMain() {
+        if (!currentUser) return;
+        let users = getUsers();
+        let u = users[currentUser];
+        document.getElementById('user-name').textContent = u.name;
+        document.getElementById('user-balance').textContent = '¥' + u.balance.toFixed(2);
+    }
+
+    function refreshInfo() {
+        if (!currentUser) return;
+        let u = getUsers()[currentUser];
+        document.getElementById('info-card').textContent = currentUser;
+        document.getElementById('info-name').textContent = u.name;
+        document.getElementById('info-idcard').textContent = u.idcard;
+        document.getElementById('info-phone').textContent = u.phone;
+        document.getElementById('info-balance').textContent = '¥' + u.balance.toFixed(2);
+    }
+
+    function refreshHistory() {
+        if (!currentUser) return;
+        let u = getUsers()[currentUser];
+        let html = '';
+        if (u.history.length === 0) { html = '<p style="text-align:center;color:#999;">暂无交易记录</p>'; }
+        else {
+            u.history.slice().reverse().forEach(h => {
+                html += '<div class="history-item"><span>' + h.type + '</span><span>' + h.amount + '</span><span style="color:#999;">' + h.time + '</span></div>';
+            });
+        }
+        document.getElementById('history-list').innerHTML = html;
+    }
+
+    function addHistory(type, amount) {
+        let users = getUsers();
+        let now = new Date();
+        let time = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+        users[currentUser].history.push({ type, amount: (amount > 0 ? '+' : '') + amount.toFixed(2), time });
+        saveUsers(users);
+    }
+
+    function doDeposit() {
+        let val = parseFloat(document.getElementById('deposit-amount').value);
+        if (!val || val <= 0) { showAlert('deposit-alert', '请输入有效金额', 'danger'); return; }
+        let users = getUsers();
+        users[currentUser].balance += val;
+        saveUsers(users);
+        addHistory('存款', val);
+        showAlert('deposit-alert', '存款成功！余额：¥' + users[currentUser].balance.toFixed(2), 'success');
+        document.getElementById('deposit-amount').value = '';
+    }
+
+    function doWithdraw() {
+        let val = parseFloat(document.getElementById('withdraw-amount').value);
+        if (!val || val <= 0) { showAlert('withdraw-alert', '请输入有效金额', 'danger'); return; }
+        let users = getUsers();
+        if (users[currentUser].balance < val) { showAlert('withdraw-alert', '余额不足', 'danger'); return; }
+        users[currentUser].balance -= val;
+        saveUsers(users);
+        addHistory('取款', -val);
+        showAlert('withdraw-alert', '取款成功！余额：¥' + users[currentUser].balance.toFixed(2), 'success');
+        document.getElementById('withdraw-amount').value = '';
+    }
+
+    function doTransfer() {
+        let to = document.getElementById('transfer-to').value.trim();
+        let val = parseFloat(document.getElementById('transfer-amount').value);
+        if (!to || !val || val <= 0) { showAlert('transfer-alert', '请填写完整信息', 'danger'); return; }
+        let users = getUsers();
+        if (!users[to]) { showAlert('transfer-alert', '对方卡号不存在', 'danger'); return; }
+        if (to === currentUser) { showAlert('transfer-alert', '不能给自己转账', 'danger'); return; }
+        if (users[currentUser].balance < val) { showAlert('transfer-alert', '余额不足', 'danger'); return; }
+        users[currentUser].balance -= val;
+        users[to].balance += val;
+        saveUsers(users);
+        addHistory('转账给' + to, -val);
+        showAlert('transfer-alert', '转账成功！余额：¥' + users[currentUser].balance.toFixed(2), 'success');
+        document.getElementById('transfer-to').value = '';
+        document.getElementById('transfer-amount').value = '';
+    }
+
+    function doChangePwd() {
+        let oldpwd = document.getElementById('old-pwd').value.trim();
+        let newpwd = document.getElementById('new-pwd').value.trim();
+        let confirmpwd = document.getElementById('confirm-pwd').value.trim();
+        if (!oldpwd || !newpwd || !confirmpwd) { showAlert('changepwd-alert', '请填写完整', 'danger'); return; }
+        let users = getUsers();
+        if (users[currentUser].pwd !== oldpwd) { showAlert('changepwd-alert', '当前密码错误', 'danger'); return; }
+        if (newpwd.length < 6) { showAlert('changepwd-alert', '新密码至少6位', 'danger'); return; }
+        if (newpwd !== confirmpwd) { showAlert('changepwd-alert', '两次密码不一致', 'danger'); return; }
+        users[currentUser].pwd = newpwd;
+        saveUsers(users);
+        showAlert('changepwd-alert', '密码修改成功', 'success');
+        document.getElementById('old-pwd').value = '';
+        document.getElementById('new-pwd').value = '';
+        document.getElementById('confirm-pwd').value = '';
+    }
+
+    function doCloseAccount() {
+        if (!confirm('确定要注销账户吗？此操作不可恢复！')) return;
+        let users = getUsers();
+        delete users[currentUser];
+        saveUsers(users);
+        alert('账户已注销');
+        currentUser = null;
+        showPage('page-login');
+    }
+</script>
+
+</body>
+</html>
